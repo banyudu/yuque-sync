@@ -2,9 +2,11 @@
   "name": "yuque-sync",
   "version": "0.0.1",
   "description": "Sync articles and toc from Yuque",
-  "main": "index.js",
+  "main": "dist/index.js",
+  "files": ["dist"],
   "scripts": {
     "start": "ts-node index.ts",
+    "build": "tsc",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
@@ -15,6 +17,7 @@
     "Yuque",
     "sync"
   ],
+  "types": "dist/index.d.ts",
   "author": "Yudu Ban <banyudu@gmail.com>",
   "license": "MIT",
   "bugs": {
@@ -24,15 +27,20 @@
   "husky": {
     "hooks": {
       "commit-msg": "commitlint -E HUSKY_GIT_PARAMS"
-    }  
+    }
   },
   "dependencies": {
+    "@yuque/sdk": "^1.1.1",
+    "sanitize-filename": "^1.6.2",
     "ts-node": "^8.3.0",
-    "typescript": "^3.5.3"
+    "typescript": "^3.5.3",
+    "yaml": "^1.6.0"
   },
   "devDependencies": {
     "@commitlint/cli": "^8.1.0",
     "@commitlint/config-conventional": "^8.1.0",
+    "@types/sanitize-filename": "^1.1.28",
+    "@types/yaml": "^1.0.2",
     "husky": "^3.0.3"
   }
 }

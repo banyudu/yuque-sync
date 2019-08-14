@@ -59,3 +59,10 @@ typings/
 
 # next.js build output
 .next
+
+# output
+out
+
+# build files
+build
+dist
