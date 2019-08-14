@@ -38,7 +38,8 @@ const getDocsifySideBar = (sideBar?: SideBar[], level = 0): string => {
     const result = []
     const prefix = ' '.repeat(2 * level)
     for (let item of sideBar) {
-        result.push(`${prefix}* [${item.name}](<${encodeURIComponent(item.key)}.md>)`)
+        const content = item.key ? `[${item.name}](<${encodeURIComponent(item.key)}.md>)` : item.name
+        result.push(`${prefix}* ${content}`)
         if (item.children && item.children.length) {
             result.push(getDocsifySideBar(item.children, level + 1))
         }
@@ -66,15 +67,17 @@ const syncBook = async (bookId: number, dir: string) => {
         baseLevel = toc[2].level
     }
     for (let item of toc) {
-        if (item.type === 'DOC') {
+        if (item.type === 'DOC' || item.type === 'TITLE') {
             // fetch data
             const key = [item.url, sanitize(item.title)].join('-')
-            const filename = [key, 'md'].join('.')
-            asyncTasks.push(syncArticle(bookId, item.id, path.join(dir, filename), body => body || '<span />'))
+            if (item.type === 'DOC') {
+                const filename = [key, 'md'].join('.')
+                asyncTasks.push(syncArticle(bookId, item.id, path.join(dir, filename), body => body || '<span />'))
+            }
 
             // create sidebar
             let level = item.level - baseLevel + 1
-            const node = { key, name: item.title }
+            const node = { key: item.type === 'DOC' ? key : '', name: item.title }
             level2Node[level] = node
 
             const pNode = level2Node[level - 1] || rootNode
