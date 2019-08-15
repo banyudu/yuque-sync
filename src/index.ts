@@ -14,12 +14,7 @@ interface SideBar {
     children?: SideBar[];
 }
 
-const client = new SDK({
-    token: process.env.YUQUE_TOKEN || undefined
-});
-
-
-const syncArticle = async (bookId: number, articleId: number, path: string, loader?: (src: string) => Promise<string> | string) => {
+const syncArticle = async (client: any, bookId: number, articleId: number, path: string, loader?: (src: string) => Promise<string> | string) => {
     const article = await client.docs.get({
         namespace: bookId,
         slug: articleId,
@@ -48,10 +43,14 @@ const getDocsifySideBar = (sideBar?: SideBar[], level = 0): string => {
 }
 
 
-const syncBook = async (bookId: number, dir: string) => {
+const syncBook = async ({ token, bookId, dir, loader }: { token?: string, bookId: number, dir: string, loader?: (src: string) => Promise<string> | string }) => {
     if (!fs.existsSync(dir)) {
         fs.mkdirSync(dir, { recursive: true })
     }
+
+    const client = new SDK({
+        token: token || process.env.YUQUE_TOKEN || undefined
+    })
     const repo = await client.repos.get({
         namespace: bookId // bookId
     })
@@ -66,13 +65,19 @@ const syncBook = async (bookId: number, dir: string) => {
     if (toc && toc[2]) {
         baseLevel = toc[2].level
     }
+    const existKeys = new Set()
     for (let item of toc) {
         if (item.type === 'DOC' || item.type === 'TITLE') {
             // fetch data
-            const key = [item.url, sanitize(item.title)].join('-')
+            const baseKey = [sanitize(item.title)].join('-')
+            let key = baseKey
+            for (let index = 2; existKeys.has(key); index++) {
+                key = `${baseKey}${index}`
+            }
+            existKeys.add(key)
             if (item.type === 'DOC') {
                 const filename = [key, 'md'].join('.')
-                asyncTasks.push(syncArticle(bookId, item.id, path.join(dir, filename), body => body || '<span />'))
+                asyncTasks.push(syncArticle(client, bookId, item.id, path.join(dir, filename), loader))
             }
 
             // create sidebar

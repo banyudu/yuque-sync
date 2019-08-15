@@ -6,16 +6,45 @@ Sync articles and toc from Yuque
 ```typescript
 import syncBook from 'yuque-sync'
 
-// need process.env.YUQUE_TOKEN
-
 const bookId = '<your book id or namespace>'
 
 const outputDir = '<your target directory>'
 
 async function foo {
-    await syncBook (bookId, outputDir)
+    await syncBook ({
+        token: process.env.YUQUE_TOKEN,
+        bookId,
+        dir: outputDir
+    })
 
-    // will write markdown files and sidebar.json to given outputDir
+    // will write markdown files and sidebar.json and _sidebar(docsify) to given dir
+}
+
+```
+
+You can provide a custom loader, to parse markdown file contents, for example replace image links.
+
+```typescript
+import syncBook from 'yuque-sync'
+
+const bookId = '<your book id or namespace>'
+
+const outputDir = '<your target directory>'
+
+const myLoader = markdown => {
+    // do something
+    return markdown
+}
+
+async function foo {
+    await syncBook ({
+        token: process.env.YUQUE_TOKEN,
+        bookId,
+        dir: outputDir,
+        loader: myLoader
+    })
+
+    // will write markdown files and sidebar.json and _sidebar(docsify) to given dir
 }
 
 ```
