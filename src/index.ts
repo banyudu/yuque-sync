@@ -14,7 +14,7 @@ interface SideBar {
     children?: SideBar[];
 }
 
-const syncArticle = async (client: any, bookId: number, articleId: number, path: string, loader?: (src: string) => Promise<string> | string) => {
+const syncArticle = async (client: any, bookId: number | string, articleId: number, path: string, loader?: (src: string) => Promise<string> | string) => {
     const article = await client.docs.get({
         namespace: bookId,
         slug: articleId,
@@ -43,7 +43,7 @@ const getDocsifySideBar = (sideBar?: SideBar[], level = 0): string => {
 }
 
 
-const syncBook = async ({ token, bookId, dir, loader }: { token?: string, bookId: number, dir: string, loader?: (src: string) => Promise<string> | string }) => {
+const syncBook = async ({ token, bookId, dir, loader }: { token?: string, bookId: number | string, dir: string, loader?: (src: string) => Promise<string> | string }) => {
     if (!fs.existsSync(dir)) {
         fs.mkdirSync(dir, { recursive: true })
     }
