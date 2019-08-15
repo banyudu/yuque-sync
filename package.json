@@ -1,9 +1,11 @@
 {
   "name": "yuque-sync",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "description": "Sync articles and toc from Yuque",
   "main": "dist/index.js",
-  "files": ["dist"],
+  "files": [
+    "dist"
+  ],
   "scripts": {
     "start": "ts-node src/index.ts",
     "build": "tsc",
