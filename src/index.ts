@@ -4,6 +4,7 @@ import * as path from 'path'
 import * as fs from 'fs'
 import * as sanitize from 'sanitize-filename'
 import { promisify } from 'util'
+import * as PromisePool from 'es6-promise-pool'
 
 const writeAsync = promisify(fs.writeFile).bind(fs)
 const copyAsync = promisify(fs.copyFile).bind(fs)
@@ -15,17 +16,29 @@ interface SideBar {
 }
 
 const syncArticle = async (client: any, bookId: number | string, articleId: number, path: string, loader?: (src: string) => Promise<string> | string) => {
-    const article = await client.docs.get({
-        namespace: bookId,
-        slug: articleId,
-        data: {
-            raw: 1
-        }
-    })
+    let retryTimes = 0
+    while (true) {
+        try {
+            const article = await client.docs.get({
+                namespace: bookId,
+                slug: articleId,
+                data: {
+                    raw: 1
+                }
+            })
 
-    const markdown = loader? await loader(article.body) : article.body
-    await writeAsync(path, markdown)
-    console.log('Write ', path)
+            const markdown = loader? await loader(article.body) : article.body
+            await writeAsync(path, markdown)
+            console.log('Write ', path)
+            break
+        } catch (error) {
+            retryTimes++
+            if (retryTimes >= 3) {
+                throw error
+            }
+            console.warn(`${articleId} failed, retry ${retryTimes} times...`)
+        }
+    }
 }
 
 const getDocsifySideBar = (sideBar?: SideBar[], level = 0): string => {
@@ -43,7 +56,13 @@ const getDocsifySideBar = (sideBar?: SideBar[], level = 0): string => {
 }
 
 
-const syncBook = async ({ token, bookId, dir, loader }: { token?: string, bookId: number | string, dir: string, loader?: (src: string) => Promise<string> | string }) => {
+const syncBook = async ({ token, bookId, dir, loader, concurrency = 5 }: {
+    token?: string;
+    bookId: number | string;
+    dir: string;
+    concurrency?: number;
+    loader?: (src: string) => Promise<string> | string
+}) => {
     if (!fs.existsSync(dir)) {
         fs.mkdirSync(dir, { recursive: true })
     }
@@ -60,25 +79,26 @@ const syncBook = async ({ token, bookId, dir, loader }: { token?: string, bookId
     let level2Node: { [key: number]: SideBar } = { 0: sidebar }
     const rootNode = level2Node[0]
 
-    const asyncTasks = []
     let baseLevel = 0
     if (toc && toc[2]) {
         baseLevel = toc[2].level
     }
     const existKeys = new Set()
-    for (let item of toc) {
+
+    let index = -1
+    const promiseProducer = function () {
+        index++
+        if (index >= toc.length) {
+            return null
+        }
+        const item = toc[index]
         if (item.type === 'DOC' || item.type === 'TITLE') {
-            // fetch data
             const baseKey = [sanitize(item.title)].join('-')
             let key = baseKey
             for (let index = 2; existKeys.has(key); index++) {
                 key = `${baseKey}${index}`
             }
             existKeys.add(key)
-            if (item.type === 'DOC') {
-                const filename = [key, 'md'].join('.')
-                asyncTasks.push(syncArticle(client, bookId, item.id, path.join(dir, filename), loader))
-            }
 
             // create sidebar
             let level = item.level - baseLevel + 1
@@ -88,8 +108,19 @@ const syncBook = async ({ token, bookId, dir, loader }: { token?: string, bookId
             const pNode = level2Node[level - 1] || rootNode
             pNode.children = pNode.children || []
             pNode.children.push(node)
+
+            // fetch data
+            if (item.type === 'DOC') {
+                const filename = [key, 'md'].join('.')
+                return syncArticle(client, bookId, item.id, path.join(dir, filename), loader)
+            }
         }
+        return new Promise((resolve, reject) => { resolve() })
     }
+    const pool = new PromisePool(promiseProducer, concurrency)
+    await pool.start()
+
+    const asyncTasks = []
     const sidebarPath = path.join(dir, 'sidebar.json')
     asyncTasks.push(writeAsync(sidebarPath, JSON.stringify(sidebar.children)))
 
