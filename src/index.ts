@@ -55,12 +55,33 @@ const getDocsifySideBar = (sideBar?: SideBar[], level = 0): string => {
     return result.join('\n')
 }
 
+function trimBlacklist (toc: any[], blacklist: Array<string | number>): any[] {
+    // trim a node if its parent node is in blacklist
+    let blacklistLevel = Number.MAX_VALUE
+    const blackSet = new Set(blacklist)
+    for (let item of toc) {
+        if (blackSet.has(item.id)) {
+            if (blacklistLevel > item.level) {
+                blacklistLevel = item.level
+            }
+        } else {
+            if (blacklistLevel < item.level) {
+                // child of blacklist nodes
+                blackSet.add(item.id)
+            } else {
+                blacklistLevel = Number.MAX_VALUE
+            }
+        }
+    }
+    return toc.filter(item => !blackSet.has(item.id))
+}
 
-const syncBook = async ({ token, bookId, dir, loader, concurrency = 5 }: {
+const syncBook = async ({ token, bookId, dir, loader, concurrency = 5, blacklist = [] }: {
     token?: string;
     bookId: number | string;
     dir: string;
     concurrency?: number;
+    blacklist?: Array<number | string>;
     loader?: (src: string) => Promise<string> | string
 }) => {
     if (!fs.existsSync(dir)) {
@@ -74,7 +95,12 @@ const syncBook = async ({ token, bookId, dir, loader, concurrency = 5 }: {
         namespace: bookId // bookId
     })
     const tocStr = repo.toc_yml
-    const toc = YAML.parse(tocStr)
+    if (!tocStr) {
+        console.error('only support <Book> Type')
+        process.exit(1)
+    }
+    let toc = YAML.parse(tocStr)
+    toc = trimBlacklist(toc, blacklist)
     const sidebar: SideBar = { key: '', name: '', children: [] }
     let level2Node: { [key: number]: SideBar } = { 0: sidebar }
     const rootNode = level2Node[0]

@@ -9,7 +9,7 @@
   "scripts": {
     "start": "ts-node src/index.ts",
     "build": "tsc && cp src/index.html dist/",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "rm -rf out && ts-mocha ./test/**/*.ts"
   },
   "repository": {
     "type": "git",
@@ -44,6 +44,8 @@
     "@commitlint/config-conventional": "^8.1.0",
     "@types/sanitize-filename": "^1.1.28",
     "@types/yaml": "^1.0.2",
-    "husky": "^3.0.3"
+    "husky": "^3.0.3",
+    "mocha": "^6.2.2",
+    "ts-mocha": "^6.0.0"
   }
 }
