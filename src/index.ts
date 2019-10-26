@@ -73,7 +73,7 @@ function trimBlacklist (toc: any[], blacklist: Array<string | number>): any[] {
             }
         }
     }
-    return toc.filter(item => !blackSet.has(item.id))
+    return toc.filter(item => !blackSet.has(item.id) && !blackSet.has(item.url))
 }
 
 const syncBook = async ({ token, bookId, dir, loader, concurrency = 5, blacklist = [] }: {
