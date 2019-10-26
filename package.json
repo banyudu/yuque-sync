@@ -1,6 +1,6 @@
 {
   "name": "yuque-sync",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Sync articles and toc from Yuque",
   "main": "dist/index.js",
   "files": [
