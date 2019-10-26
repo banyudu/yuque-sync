@@ -60,7 +60,7 @@ function trimBlacklist (toc: any[], blacklist: Array<string | number>): any[] {
     let blacklistLevel = Number.MAX_VALUE
     const blackSet = new Set(blacklist)
     for (let item of toc) {
-        if (blackSet.has(item.id)) {
+        if (blackSet.has(item.id) || blackSet.has(item.url)) {
             if (blacklistLevel > item.level) {
                 blacklistLevel = item.level
             }
