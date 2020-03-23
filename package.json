@@ -44,7 +44,7 @@
     "@commitlint/config-conventional": "^8.1.0",
     "@types/sanitize-filename": "^1.1.28",
     "@types/yaml": "^1.0.2",
-    "husky": "^3.0.3",
+    "husky": "^4.2.3",
     "mocha": "^6.2.2",
     "ts-mocha": "^6.0.0"
   }
